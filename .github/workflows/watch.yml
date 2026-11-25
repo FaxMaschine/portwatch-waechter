@@ -2,7 +2,8 @@ name: PortWatch-Waechter
 
 on:
   schedule:
-    - cron: "*/15 * * * *"   # alle 15 Minuten (GitHub verspaetet Cron-Laeufe oft um ein paar Minuten)
+    # Alle 15 Minuten, aber auf krummen Minuten: zur vollen Viertelstunde laesst GitHub bei Last Laeufe ausfallen.
+    - cron: "7,22,37,52 * * * *"
   workflow_dispatch: {}       # Knopf "Run workflow" zum Testen (nur fuer Leute mit Schreibrecht)
 # Bewusst KEIN pull_request-Trigger: fremde PRs koennen so nichts ausfuehren und nie an das Secret.
 
