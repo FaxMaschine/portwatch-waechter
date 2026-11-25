@@ -25,7 +25,7 @@ const ergebnis = {
   leaderId: effort?.id ?? null,
   leaderName: effort?.name ?? effort?.id ?? null,
   top3: ov.top3,
-  furthest: ov.furthest,
+  furthest: ov.furthest?.label ?? ov.furthest?.key ?? ov.furthest, // ist ein Objekt {key, label, ...}
   updated: daten.updated ?? null,
 };
 

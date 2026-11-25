@@ -16,6 +16,10 @@ assert.throws(() => pruefe("kein json"));
 const boese = pruefe(roh({ leaderName: "a\nb" + "x".repeat(200) }));
 assert.ok(!boese.leaderName.includes("\n") && boese.leaderName.length <= 60);
 assert.equal(pruefe(roh({ leaderName: null })).leaderName, "belobug", "ohne Namen: id");
+// Stufe kommt von PortWatch als Objekt (Fund aus dem ersten echten Lauf)
+assert.equal(pruefe(roh({ furthest: { key: "playable", label: "Playable", at: 50 } })).furthest, "Playable");
+assert.equal(pruefe(roh({ furthest: { key: "menu" } })).furthest, "menu");
+assert.equal(pruefe(roh({ furthest: { foo: { bar: 1 } } })).furthest, null, "unbekanntes Objekt: null statt [object Object]");
 
 // --- unterschiede ---
 assert.deepEqual(unterschiede(null, neu), []);

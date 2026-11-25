@@ -19,7 +19,12 @@ export function pruefe(roh) {
     if (v === null || v === "" || !Number.isFinite(n) || n < 0 || n > 100) throw new Error(`ungueltige Zahl: ${v}`);
     return Math.round(n * 10) / 10;
   };
-  const wort = (v) => (v == null ? null : String(v).replace(/[\r\n]+/g, " ").slice(0, 60));
+  const wort = (v) => {
+    if (v == null) return null;
+    if (typeof v === "object") v = v.label ?? v.key ?? v.name ?? v.id; // Objekte nie als "[object Object]"
+    if (v == null || typeof v === "object") return null;
+    return String(v).replace(/[\r\n]+/g, " ").slice(0, 60);
+  };
   return {
     leader: zahl(r.leader),
     leaderId: wort(r.leaderId),
