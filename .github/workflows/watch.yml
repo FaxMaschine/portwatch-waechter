@@ -1,0 +1,55 @@
+name: PortWatch-Waechter
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"   # alle 15 Minuten (GitHub verspaetet Cron-Laeufe oft um ein paar Minuten)
+  workflow_dispatch: {}       # Knopf "Run workflow" zum Testen (nur fuer Leute mit Schreibrecht)
+# Bewusst KEIN pull_request-Trigger: fremde PRs koennen so nichts ausfuehren und nie an das Secret.
+
+concurrency:
+  group: watch
+  cancel-in-progress: false
+
+jobs:
+  # Job 1 fuehrt PortWatchs eigenes scoring.js aus (fremder Code). Deshalb: keine Secrets,
+  # keine Rechte am Repo, keine gespeicherten Zugangsdaten. Er gibt nur Text weiter.
+  score:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions: {}
+    outputs:
+      result: ${{ steps.s.outputs.result }}
+    steps:
+      # Auf einen festen Commit geheftet statt "@v7": ein verschobenes Tag koennte sonst fremden Code einschleusen.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: s
+        run: node score.mjs
+        continue-on-error: true   # Seite down? Dann bleibt result leer; notify.mjs zaehlt mit.
+
+  # Job 2 laeuft auf einer frischen Maschine, fuehrt nur eigenen Code aus, prueft das
+  # Ergebnis streng, schickt die ntfy-Nachricht und speichert state.json im Repo.
+  notify:
+    needs: score
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Vergleichen und melden
+        env:
+          RESULT: ${{ needs.score.outputs.result }}   # als Umgebungsvariable, nie direkt ins Skript
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: node notify.mjs
+      - name: Stand speichern
+        run: |
+          if [ -n "$(git status --porcelain state.json)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add state.json
+            git commit -m "Stand aktualisiert"
+            git push
+          fi
